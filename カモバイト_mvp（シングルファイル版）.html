@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>カモバイト｜“入ってみないと分からない楽さ”を可視化</title>
+  <meta name="description" content="休憩が多い・スマホOK・喫煙OKなど“裏の楽さ”で探せるアルバイト口コミミニアプリ（ローカル保存MVP）。"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#0b0c10; --panel:#12131a; --muted:#8a8fa3; --text:#e6e8f2; --brand:#73ffa7; --brand2:#9bf2ff;
+      --red:#ff6b6b; --amber:#ffcc66; --green:#73ffa7; --card:#151826; --border:#24283b;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:"Inter","Noto Sans JP",system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji";background:linear-gradient(180deg,#0b0c10,#0b0c10 30%,#0e1020);color:var(--text)}
+    a{color:var(--brand)}
+    .container{max-width:1100px;margin:0 auto;padding:20px}
+    header{position:sticky;top:0;backdrop-filter:blur(8px);background:rgba(11,12,16,.7);border-bottom:1px solid var(--border);z-index:5}
+    .nav{display:flex;gap:16px;align-items:center;justify-content:space-between}
+    .logo{display:flex;gap:10px;align-items:center;font-weight:900;letter-spacing:.4px}
+    .logo .badge{background:linear-gradient(90deg,var(--brand),var(--brand2));color:#000;padding:8px 10px;border-radius:12px;font-weight:900}
+    .tagline{color:var(--muted);font-size:.9rem}
+    .cta{display:flex;gap:10px}
+    .btn{border:1px solid var(--border);background:var(--panel);color:var(--text);padding:10px 14px;border-radius:12px;cursor:pointer;font-weight:600}
+    .btn.primary{border-color:transparent;background:linear-gradient(90deg,var(--brand),var(--brand2));color:#001a0a}
+    .btn.ghost{background:transparent}
+    .btn:disabled{opacity:.5;cursor:not-allowed}
+
+    .hero{padding:40px 0 20px;display:grid;grid-template-columns:1.3fr .7fr;gap:20px}
+    .hero h1{font-weight:900;line-height:1.05;margin:.2em 0;font-size:clamp(28px,5vw,44px)}
+    .hero p{color:var(--muted);font-size:1rem}
+    .hero .card{background:linear-gradient(180deg,#12131a,#0f1120);border:1px solid var(--border);border-radius:18px;padding:18px}
+
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    @media (max-width:900px){.hero{grid-template-columns:1fr}.grid{grid-template-columns:1fr}}
+
+    .section-title{margin:20px 0 8px;font-weight:800}
+
+    .card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:16px}
+    .hint{color:var(--muted);font-size:.9rem}
+    .kbd{border:1px solid var(--border);background:#0f1016;padding:2px 6px;border-radius:6px}
+
+    form .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    form .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+    form .row4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+    @media (max-width:700px){form .row,form .row3,form .row4{grid-template-columns:1fr}}
+    label{font-weight:600;font-size:.92rem;margin:10px 0 6px;display:block}
+    input,select,textarea{width:100%;background:#0f1016;border:1px solid var(--border);border-radius:12px;padding:10px;color:var(--text);font:inherit}
+    textarea{min-height:88px;resize:vertical}
+    small{color:var(--muted)}
+
+    .filters{display:grid;grid-template-columns:1.1fr .9fr .9fr .9fr;gap:10px;margin:10px 0}
+    @media (max-width:900px){.filters{grid-template-columns:1fr 1fr;}}
+
+    .list{display:grid;gap:10px;margin-top:10px}
+    .item{display:grid;grid-template-columns:1fr 120px;gap:10px;border:1px solid var(--border);background:linear-gradient(180deg,#141726,#121423);border-radius:14px;padding:12px}
+    @media (max-width:700px){.item{grid-template-columns:1fr}}
+    .item h3{margin:0 0 4px;font-size:1.05rem}
+    .badges{display:flex;flex-wrap:wrap;gap:6px}
+    .badge{border:1px solid var(--border);background:#0f111a;color:#c7cbe0;padding:4px 8px;border-radius:999px;font-size:.78rem;white-space:nowrap}
+    .badge.ok{background:#0c1a13;border-color:#173c29;color:#9ff0c4}
+    .score{display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1.2rem;background:#0e1b14;border:2px solid #1f3c2c;border-radius:12px;color:var(--green)}
+
+    .empty{padding:16px;border:1px dashed var(--border);border-radius:12px;color:var(--muted);text-align:center}
+
+    footer{color:var(--muted);text-align:center;padding:20px 0 60px}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container nav">
+      <div class="logo"><span class="badge">カモ</span><span>バイト</span></div>
+      <div class="cta">
+        <button class="btn ghost" id="btnExport" title="JSONエクスポート">データ出力</button>
+        <button class="btn" id="btnImport" title="JSONインポート">データ読込</button>
+        <button class="btn primary" id="btnMock">サンプル投入</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="container hero">
+    <div>
+      <h1>“入ってみないと分からない楽さ”を、みんなで見える化。</h1>
+      <p class="tagline">休憩が多い、スマホOK、喫煙OK、店長ゆるい、人間関係ぬるい…など “ゆるさ指標”で検索できる匿名口コミアプリのMVP（ローカル保存）。
+      <br><small>※今はあなたのブラウザにのみ保存。サーバー不要でそのまま公開OK。</small></p>
+      <div class="grid">
+        <div class="card">
+          <div class="section-title">🔎 条件で探す</div>
+          <div class="filters">
+            <input id="q" placeholder="エリア・店名・業種で検索（例：梅田 カフェ）" />
+            <select id="fPhone"><option value="">スマホ</option><option>常時OK</option><option>休憩のみ</option><option>不可</option></select>
+            <select id="fSmoke"><option value="">喫煙</option><option>店内OK</option><option>屋外OK</option><option>不可</option></select>
+            <select id="fSort">
+              <option value="score">スコア高い順</option>
+              <option value="new">新着順</option>
+              <option value="break">休憩長い順</option>
+            </select>
+          </div>
+          <div class="filters">
+            <label>最低スコア
+              <input type="range" id="minScore" min="0" max="100" value="0" />
+            </label>
+            <label>休憩（分/時給1hあたり）以上
+              <input type="number" id="minBreak" placeholder="例: 15" min="0" />
+            </label>
+            <label>忙しさ（1=ヒマ〜5=激務）最大
+              <input type="number" id="maxBusy" placeholder="5" min="1" max="5" />
+            </label>
+            <label>並び替え
+              <select id="limit"><option value="50">50件</option><option value="200">200件</option><option value="9999">全件</option></select>
+            </label>
+          </div>
+          <div class="list" id="list"></div>
+          <div class="empty" id="empty" style="display:none">該当なし。フィルタをゆるめてみてね。</div>
+        </div>
+        <div class="card">
+          <div class="section-title">📝 口コミを投稿</div>
+          <form id="form">
+            <div class="row">
+              <div>
+                <label>店名 / チェーン名</label>
+                <input required id="name" placeholder="例：ミントカフェ 梅田店"/>
+              </div>
+              <div>
+                <label>エリア</label>
+                <input required id="area" placeholder="例：大阪・梅田"/>
+              </div>
+            </div>
+            <div class="row3">
+              <div>
+                <label>職種</label>
+                <input id="role" placeholder="例：カフェ/レジ/品出し"/>
+              </div>
+              <div>
+                <label>時給（円）</label>
+                <input id="wage" type="number" min="0" placeholder="例：1100"/>
+              </div>
+              <div>
+                <label>休憩（分/1時間あたり）</label>
+                <input id="breakPerHour" type="number" min="0" placeholder="例：20"/>
+              </div>
+            </div>
+            <div class="row3">
+              <div>
+                <label>スマホ</label>
+                <select id="phone"><option>常時OK</option><option>休憩のみ</option><option>不可</option></select>
+              </div>
+              <div>
+                <label>喫煙</label>
+                <select id="smoke"><option>店内OK</option><option>屋外OK</option><option>不可</option></select>
+              </div>
+              <div>
+                <label>管理のゆるさ（1厳〜5ゆる）</label>
+                <input id="management" type="number" min="1" max="5" value="3"/>
+              </div>
+            </div>
+            <div class="row3">
+              <div>
+                <label>忙しさ（1ヒマ〜5激務）</label>
+                <input id="busy" type="number" min="1" max="5" value="3"/>
+              </div>
+              <div>
+                <label>人間関係の平和度（1悪〜5良）</label>
+                <input id="mood" type="number" min="1" max="5" value="3"/>
+              </div>
+              <div>
+                <label>匿名ニックネーム</label>
+                <input id="nick" placeholder="例：カモ太郎"/>
+              </div>
+            </div>
+            <div>
+              <label>コメント（具体例・注意点・コツなど）</label>
+              <textarea id="comment" placeholder="例：昼ピーク以外は基本ヒマ。飲み物つくったらスマホOK。店長やさしい。"></textarea>
+              <small>投稿はあなたの端末に保存されます。後でJSON出力→共有でみんなの端末に読み込めます。</small>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:10px">
+              <button class="btn primary" type="submit">投稿して保存</button>
+              <button class="btn" type="button" id="btnClear">全消去</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <div class="section-title">📈 ゆるさスコアとは？</div>
+        <p class="hint">以下の重みで0〜100点化します（β版）。あとで調整可能。</p>
+        <ul class="hint">
+          <li>休憩の多さ：<b>35%</b>（1hあたり分数を正規化、最大30分で満点）</li>
+          <li>スマホ可：<b>15%</b>（常時OK=満点、休憩のみ=中、不可=0）</li>
+          <li>喫煙可：<b>5%</b>（店内>屋外>不可）</li>
+          <li>忙しさの低さ：<b>15%</b>（1が満点）</li>
+          <li>管理のゆるさ：<b>20%</b>（5が満点）</li>
+          <li>人間関係の平和度：<b>10%</b>（5が満点）</li>
+        </ul>
+        <p class="hint">※あくまで主観口コミ。誹謗中傷・機密・内部告発は書かないでね。</p>
+      </div>
+      <div class="card">
+        <div class="section-title">📤 共有のしかた（MVP）</div>
+        <ol class="hint">
+          <li>右上「データ出力」でJSONを保存</li>
+          <li>他の端末で「データ読込」→ファイル選択で反映</li>
+          <li>GitHub PagesやNetlifyにこのHTMLを置けば即公開</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="container">© 2025 カモバイト（MVP）。このバージョンはローカル保存のみ／サーバー不要。</div>
+  </footer>
+
+  <script>
+    // ---- Storage helpers ----
+    const KEY = "kamobaito:v1";
+    const store = {
+      all(){ try{ return JSON.parse(localStorage.getItem(KEY)||"[]"); }catch(e){ return [] }},
+      save(list){ localStorage.setItem(KEY, JSON.stringify(list)); },
+      push(item){ const list = store.all(); list.unshift(item); store.save(list); }
+    }
+
+    // ---- Scoring ----
+    function scoreOf(item){
+      // 0-100
+      const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+      const normBreak = clamp((item.breakPerHour||0)/30,0,1); // 30分/時で満点
+      const phone = item.phone||"休憩のみ"; // 常時OK>休憩のみ>不可
+      const phoneScore = phone==="常時OK"?1: phone==="休憩のみ"?0.5:0;
+      const smoke = item.smoke||"不可"; // 店内>屋外>不可
+      const smokeScore = smoke==="店内OK"?1: smoke==="屋外OK"?0.6:0;
+      const busy = clamp((item.busy||3),1,5); // 低いほど良い
+      const busyScore = 1 - (busy-1)/4; // 1→1.0, 5→0
+      const mgmt = clamp((item.management||3),1,5)/5;
+      const mood = clamp((item.mood||3),1,5)/5;
+
+      const score = (
+        normBreak * 35 +
+        phoneScore * 15 +
+        smokeScore * 5 +
+        busyScore * 15 +
+        mgmt * 20 +
+        mood * 10
+      );
+      return Math.round(score);
+    }
+
+    // ---- Render list ----
+    const $list = document.getElementById('list');
+    const $empty = document.getElementById('empty');
+
+    function fmt(x){ return x==null || x==="" ? "-" : x }
+
+    function render(){
+      const q = document.getElementById('q').value.trim().toLowerCase();
+      const fPhone = document.getElementById('fPhone').value;
+      const fSmoke = document.getElementById('fSmoke').value;
+      const minScore = +document.getElementById('minScore').value || 0;
+      const minBreak = +document.getElementById('minBreak').value || 0;
+      const maxBusy = +document.getElementById('maxBusy').value || 5;
+      const sort = document.getElementById('fSort').value;
+      const limit = +document.getElementById('limit').value;
+
+      let data = store.all().map(d=>({...d, score: d.score ?? scoreOf(d)}));
+
+      // Filter
+      data = data.filter(d=>{
+        const hit = [d.name,d.area,d.role].filter(Boolean).join(' ').toLowerCase().includes(q);
+        const okPhone = fPhone? d.phone===fPhone : true;
+        const okSmoke = fSmoke? d.smoke===fSmoke : true;
+        const okScore = (d.score>=minScore);
+        const okBreak = (+(d.breakPerHour||0) >= minBreak);
+        const okBusy = (+(d.busy||5) <= maxBusy);
+        return hit && okPhone && okSmoke && okScore && okBreak && okBusy;
+      });
+
+      // Sort
+      if(sort==='score') data.sort((a,b)=>b.score-a.score);
+      if(sort==='new') data.sort((a,b)=> (b.created||0)-(a.created||0));
+      if(sort==='break') data.sort((a,b)=> (b.breakPerHour||0)-(a.breakPerHour||0));
+
+      // Limit
+      data = data.slice(0, limit);
+
+      $list.innerHTML = '';
+      if(!data.length){ $empty.style.display='block'; return; }
+      $empty.style.display='none';
+
+      for(const d of data){
+        const div = document.createElement('div');
+        div.className='item';
+        const badges = [];
+        if(d.breakPerHour>0) badges.push(`休憩 ${d.breakPerHour}分/h`);
+        if(d.phone) badges.push(`スマホ ${d.phone}`);
+        if(d.smoke) badges.push(`喫煙 ${d.smoke}`);
+        if(d.wage) badges.push(`時給 ¥${d.wage}`);
+        badges.push(`忙しさ ${d.busy??'-'}`);
+        badges.push(`管理ゆるさ ${d.management??'-'}`);
+        badges.push(`人間関係 ${d.mood??'-'}`);
+
+        div.innerHTML = `
+          <div>
+            <h3>${escapeHtml(d.name||'（無題）')} <small class="hint">${escapeHtml(d.area||'')}</small></h3>
+            <div class="badges">${badges.map(b=>`<span class="badge">${escapeHtml(b)}</span>`).join('')}</div>
+            <p class="hint" style="margin:8px 0 0">${escapeHtml(d.comment||'')}</p>
+            <p class="hint" style="margin:6px 0 0">投稿者：${escapeHtml(d.nick||'匿名')}・${new Date(d.created||Date.now()).toLocaleString()}</p>
+          </div>
+          <div class="score">${d.score}</div>
+        `;
+        $list.appendChild(div);
+      }
+    }
+
+    function escapeHtml(s){
+      return (s||'').replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]))
+    }
+
+    // ---- Form events ----
+    document.getElementById('form').addEventListener('submit', (e)=>{
+      e.preventDefault();
+      const item = {
+        id: crypto.randomUUID(),
+        name: document.getElementById('name').value.trim(),
+        area: document.getElementById('area').value.trim(),
+        role: document.getElementById('role').value.trim(),
+        wage: +(document.getElementById('wage').value||0),
+        breakPerHour: +(document.getElementById('breakPerHour').value||0),
+        phone: document.getElementById('phone').value,
+        smoke: document.getElementById('smoke').value,
+        management: +(document.getElementById('management').value||3),
+        busy: +(document.getElementById('busy').value||3),
+        mood: +(document.getElementById('mood').value||3),
+        nick: document.getElementById('nick').value.trim(),
+        comment: document.getElementById('comment').value.trim(),
+        created: Date.now()
+      }
+      item.score = scoreOf(item);
+      if(!item.name || !item.area){ alert('店名とエリアは必須です'); return; }
+      store.push(item);
+      (e.target).reset();
+      render();
+    });
+
+    document.getElementById('btnClear').addEventListener('click', ()=>{
+      if(confirm('ローカル保存データを全て削除します。よろしいですか？')){
+        localStorage.removeItem(KEY);
+        render();
+      }
+    });
+
+    // ---- Filters
+    ['q','fPhone','fSmoke','minScore','minBreak','maxBusy','fSort','limit'].forEach(id=>{
+      document.getElementById(id).addEventListener('input', render);
+      document.getElementById(id).addEventListener('change', render);
+    });
+
+    // ---- Import/Export ----
+    document.getElementById('btnExport').addEventListener('click', ()=>{
+      const data = store.all();
+      const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = Object.assign(document.createElement('a'), {href:url, download:'kamobaito-data.json'});
+      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    });
+
+    document.getElementById('btnImport').addEventListener('click', ()=>{
+      const input = Object.assign(document.createElement('input'), {type:'file', accept:'application/json'});
+      input.onchange = () => {
+        const file = input.files[0]; if(!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          try{
+            const arr = JSON.parse(reader.result);
+            if(!Array.isArray(arr)) throw new Error('形式が不正です');
+            // マージ（同一ID重複はスキップ）
+            const current = store.all();
+            const ids = new Set(current.map(x=>x.id));
+            const merged = [...current, ...arr.filter(x=>!ids.has(x.id))];
+            store.save(merged);
+            render();
+          }catch(e){ alert('読み込み失敗：'+e.message) }
+        }
+        reader.readAsText(file);
+      }
+      input.click();
+    });
+
+    // ---- Mock data ----
+    document.getElementById('btnMock').addEventListener('click', ()=>{
+      if(!confirm('デモ用サンプル投稿を追加しますか？')) return;
+      const samples = [
+        {name:'ドリップカフェ 心斎橋', area:'大阪・心斎橋', role:'カフェ', wage:1100, breakPerHour:20, phone:'常時OK', smoke:'屋外OK', management:5, busy:2, mood:4, nick:'珈琲民', comment:'昼ピーク以外は基本ヒマ。動画見ても注意されない。'},
+        {name:'メガドンキ 町田', area:'東京・町田', role:'品出し', wage:1200, breakPerHour:10, phone:'休憩のみ', smoke:'不可', management:3, busy:3, mood:3, nick:'夜勤勢', comment:'夜勤はかなり自由。店長放置気味。'},
+        {name:'カラオケ JOYO 天神', area:'福岡・天神', role:'フロア', wage:1050, breakPerHour:15, phone:'常時OK', smoke:'店内OK', management:4, busy:3, mood:4, nick:'カラ民', comment:'深夜帯はほぼスマホタイム。タバコOK。'},
+        {name:'ホームセンターK 加古川', area:'兵庫・加古川', role:'レジ', wage:1030, breakPerHour:5, phone:'不可', smoke:'屋外OK', management:2, busy:4, mood:3, nick:'レジっ子', comment:'土日は激務でゆるくない。平日夕方はマシ。'}
+      ];
+      const now = Date.now();
+      const withMeta = samples.map((s,i)=>({id:crypto.randomUUID(),...s, created: now - i*3600_000})).map(s=>({...s, score: scoreOf(s)}));
+      const merged = [...withMeta, ...store.all()];
+      store.save(merged); render();
+    });
+
+    // First paint
+    render();
+  </script>
+</body>
+</html>
